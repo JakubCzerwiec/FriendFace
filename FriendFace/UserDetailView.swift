@@ -6,14 +6,17 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct UserDetailView: View {
+  //  @Environment(\.modelContext) var modelContext
     let user: User
     
     var body: some View {
             VStack {
                 Text(user.name)
                     .font(.title)
+                Text("Age: \(user.age)")
                 Text("Joined: \(user.formattedRegisteredDate)")
 
                 List {

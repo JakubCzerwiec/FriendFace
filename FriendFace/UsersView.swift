@@ -6,13 +6,38 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct UsersView: View {
+    @Query var users: [User]
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            List {
+                ForEach(users, id: \.id) { user in
+                    NavigationLink(value: user) {
+                        HStack {
+                            Text(user.name)
+                            Spacer()
+                            Text("Is Active: ")
+                            Text("\(user.isActive ? Image(systemName: "checkmark.circle") : Image(systemName: "xmark.circle"))")
+                                .foregroundStyle(user.isActive ? .green : .red)
+                        }
+                    }
+                }
+            }
+            .navigationDestination(for: User.self) { user in
+                UserDetailView(user: user)
+            }
+            .navigationTitle("FriendFace")
+        }
+    }
+    
+    init(sortOrder: [SortDescriptor<User>]) {
+         _users = Query(sort: sortOrder)
     }
 }
 
 #Preview {
-    UsersView()
+    UsersView(sortOrder: [SortDescriptor(\User.name)])
 }

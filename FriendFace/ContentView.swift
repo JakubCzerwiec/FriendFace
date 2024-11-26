@@ -6,33 +6,51 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
-
-    @State private var users: [User] = []
+    @Environment(\.modelContext) var modelContext
+    @State var users: [User] = []
+    
+    @State private var sortOrder = [
+        SortDescriptor(\User.name),
+        SortDescriptor(\User.registered)
+    ]
     
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(users, id: \.id) { user in
-                    NavigationLink(value: user) {
-                        HStack {
-                            Text(user.name)
-                            Spacer()
-                            Text("Is Active: ")
-                            user.isActive ? Image(systemName: "checkmark.circle") : Image(systemName: "xmark.circle")
+            UsersView(sortOrder: sortOrder)
+                .toolbar {
+                    Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                        Picker("Sort", selection: $sortOrder) {
+                            Text("Sort by name")
+                                .tag([
+                                    SortDescriptor(\User.name),
+                                    SortDescriptor(\User.registered)
+                                ])
+                            Text("Sort by registered date")
+                                .tag([
+                                    SortDescriptor(\User.registered),
+                                    SortDescriptor(\User.name)
+                                ])
+                            Text("Sort by age (from youngest)")
+                                .tag([
+                                    SortDescriptor(\User.age)
+                                ])
+                            Text("Sort by age (from oldest)")
+                                .tag([
+                                    SortDescriptor(\User.age, order: .reverse)
+                                ])
                         }
                     }
                 }
-            }
-            .navigationDestination(for: User.self) { user in
-                UserDetailView(user: user)
-            }
-            .navigationTitle("FriendFace")
-            
         }
+
         .task {
             await loadData()
+            for user in users {
+                modelContext.insert(user)
+            }
         }
     }
     
@@ -48,6 +66,10 @@ struct ContentView: View {
             let (data, _) = try await URLSession.shared.data(from: url)
             if let decodedResponse = try? decoder.decode([User].self, from: data) {
                 users = decodedResponse.self
+                do {
+                   try modelContext.delete(model: User.self)
+                }
+
             }
         } catch {
             print("Invalid data")
